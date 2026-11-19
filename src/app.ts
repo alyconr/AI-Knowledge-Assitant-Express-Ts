@@ -32,11 +32,38 @@ import {
   type AssistantService
 } from './services/assistant.service.js';
 
+
+import {
+  OpenRouterStructuredClient,
+} from "./ai/openrouter-structured.js";
+
+import {
+  createExtractorService,
+  type ExtractorService,
+} from "./services/extract.services.js";
+
+import {
+  createExtractRouter,
+} from "./routes/extract.routes.js";
+
 // Construir la aplicación HTTP
 
 export function createApp(
   config: AppConfig,
-  assistantService: AssistantService = createAssistantService(config)
+  assistantService: AssistantService = createAssistantService(config),
+
+
+extractorService: ExtractorService =
+  createExtractorService(
+    new OpenRouterStructuredClient({
+      apiKey: config.OPENROUTER_API_KEY ?? "",
+      timeoutMs: config.REQUEST_TIMEOUT_MS,
+    }),
+    config.OPENROUTER_MODEL ?? ""
+  )
+
+  
+
 ) {
 
   const app = express();
@@ -79,6 +106,11 @@ export function createApp(
   app.use(
     '/api/v1/ask',
     createAskRoutes(assistantService)
+  );
+
+  app.use(
+    '/api/v1/extract',
+    createExtractRouter(extractorService)
   );
 
   // Cargar la especificación OpenAPI
